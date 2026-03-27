@@ -90,6 +90,37 @@ Tensor* tensor_add(Tensor* a, Tensor *b) {
     return result;
 }
 
+Tensor* tensor_add_bias(Tensor* a, Tensor* bias) {
+    // Safety check: 'a' should be 2D [Batch, Features], 'bias' should be [1, Features]
+    if (a->shape[1] != bias->shape[1]) {
+        fprintf(stderr, "Fatal Error: Bias broadcasting dimension mismatch.\n");
+        return NULL;
+    }
+
+    int batch_size = a->shape[0];
+    int features = a->shape[1];
+
+    Tensor* out = create_tensor(a->shape, a->ndims, a->requires_grad || bias->requires_grad);
+    // Forward pass: add the bias to every row
+    for (int i = 0; i < batch_size; i++) {
+        for (int j = 0; j < features; j++) {
+            // out[i, j] = a[i, j] + bias[0, j]
+            out->data[i * features + j] = a->data[i * features + j] + bias->data[j];
+        }
+    }
+
+    // Link the autograd graph
+    if (out->requires_grad) {
+        out->op = OP_ADDBIAS; // Let's assume 5 is OP_ADD_BIAS. (Update your enum/defines if you have them!)
+        out->num_parents = 2;
+        out->parents = (Tensor**)malloc(2 * sizeof(Tensor*));
+        out->parents[0] = a;
+        out->parents[1] = bias;
+    }
+
+    return out;
+}
+
 Tensor* tensor_mul(Tensor* a, Tensor *b) {
     //Multiply two tensors element-wise, return a new tensor
     if (a -> ndims != b -> ndims) {

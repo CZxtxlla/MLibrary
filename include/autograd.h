@@ -11,6 +11,7 @@ void backward_add(Tensor* t);
 void backward_mul(Tensor* t);
 void backward_matmul(Tensor* t);
 void backward_relu(Tensor* t);
+void backward_add_bias(Tensor* t);
 
 void backward(Tensor* t);
 

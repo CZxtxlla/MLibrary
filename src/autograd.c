@@ -61,8 +61,9 @@ void build_topo(Tensor* u, TensorArray* topo, TensorArray* visited) {
         for (int i = 0; i < u -> num_parents; i ++) {
             build_topo(u -> parents[i], topo, visited);
         }
+
+        tensor_array_append(topo, u);
     }
-    tensor_array_append(topo, u);
 }
 
 // Functions for the backward pass
@@ -160,6 +161,31 @@ void backward_relu(Tensor* t) {
     }
 }
 
+void backward_add_bias(Tensor* t) {
+    if (t -> op != OP_ADDBIAS || t -> num_parents != 2) {
+        fprintf(stderr, "Error: backward_add_bias called on a tensor that is not the result of an add_bias operation.\n");
+        return;
+    }
+    Tensor* a = t -> parents[0];
+    Tensor* bias = t -> parents[1];
+
+    int batch_size = a->shape[0];
+    int features = a->shape[1];
+
+    if (a -> requires_grad) {
+        for (int i = 0; i < a -> size; i++) {
+            a -> grad[i] += t -> grad[i];
+        }
+    }
+    if (bias -> requires_grad) {
+        for (int i = 0; i < batch_size; i++) {
+            for (int j = 0; j < features; j++) {
+                bias -> grad[j] += t -> grad[i * features + j]; // Sum over the batch dimension
+            }
+        }
+    }
+}
+
 void backward(Tensor* t) {
     // Main backward function that performs a topological sort of the computation graph and calls the appropriate backward functions in order
     TensorArray topo;
@@ -182,6 +208,8 @@ void backward(Tensor* t) {
             backward_matmul(current);
         } else if (current -> op == OP_RELU) {
             backward_relu(current);
+        } else if (current -> op == OP_ADDBIAS) {
+            backward_add_bias(current);
         }
     }
     // Free allocated memory

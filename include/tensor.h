@@ -4,13 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "math.h"
 
 typedef enum {
     OP_NONE,
     OP_ADD,
     OP_MUL,
     OP_MATMUL,
-    OP_RELU
+    OP_RELU,
+    OP_ADDBIAS
 } OpType;
 
 typedef struct Tensor {
@@ -34,5 +36,6 @@ Tensor* tensor_add(Tensor* a, Tensor* b);
 Tensor* tensor_mul(Tensor* a, Tensor* b);
 Tensor* tensor_matmul(Tensor* a, Tensor* b);
 Tensor* tensor_relu(Tensor* a);
+Tensor* tensor_add_bias(Tensor* a, Tensor* bias);
 
 #endif
