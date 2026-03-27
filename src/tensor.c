@@ -165,3 +165,27 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b) {
     }
     return result;
 }
+
+Tensor* tensor_relu(Tensor* a) {
+    // Apply ReLU activation function element-wise, return a new tensor
+    Tensor* result = create_tensor(a -> shape, a -> ndims, a -> requires_grad);
+
+    // Forward pass, max(0, x)
+    for (int i = 0; i < a -> size; i++) {
+        result -> data[i] = a -> data[i] > 0 ? a -> data[i] : 0.0f;
+    }
+
+    if (result -> requires_grad) {
+        result -> parents = (Tensor**)malloc(sizeof(Tensor*));
+        if (result -> parents == NULL) {
+            fprintf(stderr, "Error: Failed to allocate memory for parents array in ReLU result tensor.\n");
+            free_tensor(result);
+            return NULL;
+        }
+        // Set the parent and operation type for autograd
+        result -> parents[0] = a;
+        result -> num_parents = 1;
+        result -> op = OP_RELU;
+    }
+    return result;
+}

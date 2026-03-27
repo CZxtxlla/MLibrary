@@ -14,6 +14,4 @@ void backward_relu(Tensor* t);
 
 void backward(Tensor* t);
 
-Tensor** topological_sort(Tensor* t, Tensor** visited, int* visited_count);
-
 #endif

@@ -146,6 +146,20 @@ void backward_matmul(Tensor* t) {
     }
 }
 
+void backward_relu(Tensor* t) {
+    // Takes tensor t which is the result of a relu operation, and computes the gradients for its parent
+    if (t -> op != OP_RELU || t -> num_parents != 1) {
+        fprintf(stderr, "Error: backward_relu called on a tensor that is not the result of a relu operation.\n");
+        return;
+    }
+    Tensor* a = t -> parents[0];
+    if (a -> requires_grad) {
+        for (int i = 0; i < t -> size; i++) {
+            a -> grad[i] += a -> data[i] > 0 ? t -> grad[i] : 0.0f; // grad_input = grad_output if input > 0 else 0
+        }
+    }
+}
+
 void backward(Tensor* t) {
     // Main backward function that performs a topological sort of the computation graph and calls the appropriate backward functions in order
     TensorArray topo;
@@ -166,6 +180,8 @@ void backward(Tensor* t) {
             backward_mul(current);
         } else if (current -> op == OP_MATMUL) {
             backward_matmul(current);
+        } else if (current -> op == OP_RELU) {
+            backward_relu(current);
         }
     }
     // Free allocated memory
