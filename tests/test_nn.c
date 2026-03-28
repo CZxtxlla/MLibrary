@@ -48,6 +48,8 @@ int main() {
         printf("db1[%d] = %f\n", i, layer1->bias->grad[i]);
     }
 
+    free_graph(final_out); // Free the entire computation graph starting from the output
+
     // 6. Memory Cleanup (Freeing a graph backwards is tricky, but we 
     // free the root nodes and layer parameters here to keep it mostly clean)
     free_linear_layer(layer1);

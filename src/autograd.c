@@ -216,3 +216,40 @@ void backward(Tensor* t) {
     tensor_array_free(&topo);
     tensor_array_free(&visited);
 }
+
+void collect_nodes(Tensor* root, TensorArray* visited) {
+    // Helper for the garbage collector to find all unique nodes in the computation graph starting from the root tensor
+    if (root == NULL) return;
+    
+    if (!is_visited(root, visited)) {
+        tensor_array_append(visited, root);
+        
+        for (int i = 0; i < root->num_parents; i++) {
+            collect_nodes(root->parents[i], visited);
+        }
+    }
+}
+
+void free_graph(Tensor* root) {
+    // Function to free all tensors in the computation graph starting from the root tensor.
+    if (root == NULL) return;
+
+    TensorArray visited;
+    tensor_array_init(&visited, 16); 
+
+    // Gather every single node in the computation graph
+    collect_nodes(root, &visited);
+
+    for (int i = 0; i < visited.size; i++) {
+        Tensor* current = visited.array[i];
+        
+        // If it has parents, the forward pass dynamically allocated it.
+        // Thus it is an intermediate node, so we destroy it.
+        if (current->num_parents > 0) {
+            free_tensor(current); 
+        }
+    }
+
+    // 4. Free the dynamic array itself
+    tensor_array_free(&visited);
+}

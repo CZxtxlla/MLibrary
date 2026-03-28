@@ -15,4 +15,6 @@ void backward_add_bias(Tensor* t);
 
 void backward(Tensor* t);
 
+void free_graph(Tensor* root);
+
 #endif
