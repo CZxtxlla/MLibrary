@@ -195,7 +195,7 @@ void backward(Tensor* t) {
 
     build_topo(t, &topo, &visited);
 
-    t->grad[0] = 1.0f; // Seed the final output gradient with 1.0 (since dz/dz = 1)
+    //t->grad[0] = 1.0f; // Seed the final output gradient with 1.0 (since dz/dz = 1)
 
     // Now we have the topological order of tensors in topo, we can call the backward functions in reverse order
     for (int i = topo.size - 1; i >= 0; i--) {

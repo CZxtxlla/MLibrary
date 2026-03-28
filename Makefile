@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -I./include
 
 # The core library source files and their corresponding object files
-SRCS = src/tensor.c src/autograd.c src/nn.c
+SRCS = src/tensor.c src/autograd.c src/nn.c src/optim.c
 OBJS = $(SRCS:.c=.o)
 
 # The test executables we want to build

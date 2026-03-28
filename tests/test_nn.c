@@ -1,63 +1,93 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include "../include/tensor.h"
 #include "../include/nn.h"
 #include "../include/autograd.h"
-
+#include "../include/optim.h"
 
 int main() {
-    printf("--- Neural Network (MLP) Autograd Test ---\n\n");
+    printf("--- MLibrary XOR Training --- \n\n");
 
-    // 1. Create Dummy Input Data (Shape: [1, 3] -> 1 batch, 3 features)
-    int x_shape[] = {1, 3};
-    Tensor* x = create_tensor(x_shape, 2, false); // Input doesn't need gradients
-    x->data[0] = 1.0f; 
-    x->data[1] = 2.0f; 
-    x->data[2] = 3.0f;
+    // 1. Setup the XOR Data (Batch Size: 4, Features: 2)
+    int x_shape[] = {4, 2};
+    Tensor* x = create_tensor(x_shape, 2, false);
+    
+    // Row 0: [0, 0]
+    x->data[0] = 0.0f; x->data[1] = 0.0f;
+    // Row 1: [0, 1]
+    x->data[2] = 0.0f; x->data[3] = 1.0f;
+    // Row 2: [1, 0]
+    x->data[4] = 1.0f; x->data[5] = 0.0f;
+    // Row 3: [1, 1]
+    x->data[6] = 1.0f; x->data[7] = 1.0f;
 
-    // 2. Instantiate the Layers
-    printf("Initializing Layers...\n");
-    LinearLayer* layer1 = create_linear_layer(3, 2);
-    LinearLayer* layer2 = create_linear_layer(2, 1);
+    // The target answers for those 4 rows
+    float targets[] = {0.0f, 1.0f, 1.0f, 0.0f};
 
-    // 3. The Forward Pass
-    printf("Running Forward Pass...\n");
+    // 2. Setup the Network (2 inputs -> 8 hidden -> 1 output)
+    LinearLayer* layer1 = create_linear_layer(2, 8);
+    LinearLayer* layer2 = create_linear_layer(8, 1);
+
+    // 3. Setup Optimizer (Higher learning rate for XOR)
+    Tensor* parameters[] = {layer1->weight, layer1->bias, layer2->weight, layer2->bias};
+    SGD* optim = sgd_create(parameters, 4, 0.1f); 
+
+    printf("Starting Training...\n\n");
+
+    // 4. The Training Loop
+    int epochs = 2000; // XOR takes longer to map non-linear spaces
+    for (int epoch = 1; epoch <= epochs; epoch++) {
+        
+        sgd_zero_grad(optim);
+
+        // Forward Pass (Processing all 4 rows simultaneously!)
+        Tensor* z1 = linear_forward(layer1, x);
+        Tensor* a1 = tensor_relu(z1);
+        Tensor* final_out = linear_forward(layer2, a1);
+
+        // Calculate MSE Loss for the entire batch
+        float total_loss = 0.0f;
+        for (int i = 0; i < 4; i++) {
+            float diff = final_out->data[i] - targets[i];
+            total_loss += diff * diff;
+            
+            // Seed the gradient for each of the 4 batch outputs
+            // Derivative of MSE is 2 * (pred - target), averaged over the batch
+            final_out->grad[i] = 2.0f * diff / 4.0f; 
+        }
+        float mse = total_loss / 4.0f;
+
+        // Backward Pass & Optimize
+        backward(final_out);
+        sgd_step(optim);
+
+        // Memory Cleanup
+        free_graph(final_out);
+
+        if (epoch % 200 == 0 || epoch == 1) {
+            printf("Epoch %4d | Loss: %8.4f\n", epoch, mse);
+        }
+    }
+
+    printf("\nTraining Complete! Let's test the final predictions:\n\n");
+    
+    // 5. Final Evaluation Pass
     Tensor* z1 = linear_forward(layer1, x);
     Tensor* a1 = tensor_relu(z1);
     Tensor* final_out = linear_forward(layer2, a1);
-
-    printf("\nFinal Output Value: %f\n", final_out->data[0]);
-    // Note: Because we initialized weights randomly, your output value 
-    // will be slightly different every time you run this!
-
-    // 4. The Backward Pass
-    printf("\nRunning Backward Pass...\n");
-    // Seed the final gradient (assuming this is our loss)
-    final_out->grad[0] = 1.0f; 
-    backward(final_out);
-
-    // 5. Verify Gradients Flowed All the Way Back
-    // If the chain rule worked through the matmuls, adds, and relus,
-    // the very first layer should now have non-zero gradients.
-    printf("\nLayer 1 Weight Gradients (should be non-zero):\n");
-    for (int i = 0; i < layer1->weight->size; i++) {
-        printf("dW1[%d] = %f\n", i, layer1->weight->grad[i]);
+    
+    for (int i = 0; i < 4; i++) {
+        printf("Input: [%.0f, %.0f] | Target: %.0f | Prediction: %8.4f\n", 
+               x->data[i*2], x->data[i*2+1], targets[i], final_out->data[i]);
     }
-
-    printf("\nLayer 1 Bias Gradients (should be non-zero):\n");
-    for (int i = 0; i < layer1->bias->size; i++) {
-        printf("db1[%d] = %f\n", i, layer1->bias->grad[i]);
-    }
-
-    free_graph(final_out); // Free the entire computation graph starting from the output
-
-    // 6. Memory Cleanup (Freeing a graph backwards is tricky, but we 
-    // free the root nodes and layer parameters here to keep it mostly clean)
+    
+    // Final memory sweep
+    free_graph(final_out);
     free_linear_layer(layer1);
     free_linear_layer(layer2);
     free_tensor(x);
-    // Note: In a production C engine, we would write a graph-freeing utility 
-    // to clean up z1, a1, and final_out, but we'll let the OS reclaim it for this test.
+    sgd_free(optim);
 
-    printf("\nTest Complete!\n");
     return 0;
 }
