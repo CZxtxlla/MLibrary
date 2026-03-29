@@ -102,15 +102,16 @@ int main() {
 
     // 2. Setup the Architecture (784 Pixels -> 128 Hidden -> 10 Digit Classes)
     int architecture[] = {784, 128, 10}; 
-    //MLP* model = create_mlp(architecture, 3); // 3 layers: Input, Hidden, Output
+    MLP* model = create_mlp(architecture, 3); // 3 layers: Input, Hidden, Output
 
-    LinearLayer* layer1 = create_linear_layer(architecture[0], architecture[1]);
-    LinearLayer* layer2 = create_linear_layer(architecture[1], architecture[2]);
+    //LinearLayer* layer1 = create_linear_layer(architecture[0], architecture[1]);
+    //LinearLayer* layer2 = create_linear_layer(architecture[1], architecture[2]);
 
 
     // 3. Setup the Optimizer (SGD)
     int num_params = 4;
-    Tensor* params[] = {layer1->weight, layer1->bias, layer2->weight, layer2->bias}; 
+    //Tensor* params[] = {layer1->weight, layer1->bias, layer2->weight, layer2->bias}; 
+    Tensor** params = mlp_get_parameters(model, &num_params); // Get all parameters from the MLP
     SGD* optim = sgd_create(params, num_params, 0.05f); // Learning rate = 0.05
 
     // 4. Pre-allocate the Mini-Batch Tensors
@@ -147,10 +148,12 @@ int main() {
             sgd_zero_grad(optim);
 
             // Step C: Forward Pass
+            /*
             Tensor* z1 = linear_forward(layer1, batch_x);
             Tensor* a1 = tensor_relu(z1);
             Tensor* logits = linear_forward(layer2, a1);
-
+            */
+            Tensor* logits = mlp_forward(model, batch_x);
             // Step D: Calculate Loss & Inject Gradients
             float loss = cross_entropy_loss(logits, batch_y);
             epoch_loss += loss;
@@ -186,7 +189,7 @@ int main() {
 
     // --- Calculate Final Accuracy ---
     printf("Evaluating Model Accuracy on Test Data...\n");
-    float accuracy = calculate_accuracy(layer1, layer2, test_images, test_labels, batch_size);
+    float accuracy = calculate_accuracy(model->layers[0], model->layers[1], test_images, test_labels, batch_size);
     printf("Final Test Accuracy: %.2f%%\n\n", accuracy);
 
     // 5. Memory Cleanup
@@ -196,8 +199,7 @@ int main() {
     free_tensor(test_labels);
     free_tensor(batch_x);
     free_tensor(batch_y);
-    free_linear_layer(layer1);
-    free_linear_layer(layer2);
+    free_mlp(model);
     sgd_free(optim);
 
     return 0;

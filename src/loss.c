@@ -41,7 +41,7 @@ float cross_entropy_loss(Tensor* logits, Tensor* targets){
                 // this is a += because of multiple batches, but in a single example scenario this is just total_loss = -log(prob)
             }
 
-            // The beautifully simple fused gradient: (Prob - Target)
+            // The fused gradient: (Prob - Target)
             // We divide by batch_size so the gradients don't explode with large batches
             logits->grad[b * num_classes + i] = (prob - target) / (float)batch_size;
         }

@@ -57,3 +57,61 @@ void free_linear_layer(LinearLayer* layer) {
         free(layer);
     }
 }
+
+// MLP functions go here
+
+MLP* create_mlp(int* architecture, int num_layers) {
+    MLP* model = (MLP*)malloc(sizeof(MLP));
+    if (model == NULL) {
+        fprintf(stderr, "Error: Failed to allocate memory for MLP struct.\n");
+        return NULL;
+    }
+
+    model->num_layers = num_layers - 1; // Number of linear layers is one less than the number of layer sizes
+    model->layers = (LinearLayer**)malloc(model->num_layers * sizeof(LinearLayer*));
+    if (model->layers == NULL) {
+        fprintf(stderr, "Error: Failed to allocate memory for MLP layers array.\n");
+        free(model);
+        return NULL;
+    }
+
+    for (int i = 0; i < model->num_layers; i ++){
+        model->layers[i] = create_linear_layer(architecture[i], architecture[i + 1]);
+    }
+    return model;
+}
+
+Tensor* mlp_forward(MLP* model, Tensor* input) {
+    Tensor* current = input;
+    for (int i = 0; i < model->num_layers; i++) {
+        current = linear_forward(model->layers[i], current);
+        if (i < model->num_layers - 1) { // Apply ReLU after all but the last layer
+            current = tensor_relu(current);
+        }
+    }
+    return current;
+}
+
+Tensor** mlp_get_parameters(MLP* model, int* out_num_paramters) {
+    *out_num_paramters = model->num_layers * 2; // Each layer has a weight and a bias
+    Tensor** params = (Tensor**)malloc(*out_num_paramters * sizeof(Tensor*));
+    if (params == NULL) {
+        fprintf(stderr, "Error: Failed to allocate memory for MLP parameters array.\n");
+        return NULL;
+    }
+    for (int i = 0; i < model->num_layers; i++) {
+        params[i * 2] = model->layers[i]->weight;
+        params[i * 2 + 1] = model->layers[i]->bias;
+    }
+    return params;
+}
+
+void free_mlp(MLP* model) {
+    if (model != NULL) {
+        for (int i = 0; i < model->num_layers; i++) {
+            free_linear_layer(model->layers[i]);
+        }
+        free(model->layers);
+        free(model);
+    }
+}
