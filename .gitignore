@@ -8,3 +8,6 @@ test_matmul
 
 # macOS folder attributes
 .DS_Store
+
+#python cache
+__pycache__/

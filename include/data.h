@@ -13,4 +13,7 @@ Tensor* load_mnist_images(const char* filename);
 // Returns a Tensor of shape [num_items, 10].
 Tensor* load_mnist_labels(const char* filename);
 
+// Copies a batch of data from the main dataset tensors into the batch tensors
+void fetch_batch(Tensor* dataset_x, Tensor* dataset_y, int start_idx, int batch_size, Tensor* batch_x, Tensor* batch_y);
+
 #endif // DATA_H

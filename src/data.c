@@ -96,7 +96,7 @@ Tensor* load_mnist_labels(const char* filename) {
     fread(raw_labels, sizeof(uint8_t), num_items, file);
 
     // Set the specific index to 1.0f for the one-hot encoding
-    for (int i = 0; i < num_items; i++) {
+    for (uint32_t i = 0; i < num_items; i++) {
         uint8_t digit = raw_labels[i];
         labels->data[i * 10 + digit] = 1.0f; 
     }
@@ -104,4 +104,19 @@ Tensor* load_mnist_labels(const char* filename) {
     free(raw_labels);
     fclose(file);
     return labels;
+}
+
+// Helper function to copy a chunk of the dataset into our active batch tensors
+void fetch_batch(Tensor* dataset_x, Tensor* dataset_y, int start_idx, int batch_size, Tensor* batch_x, Tensor* batch_y) {
+    int features = dataset_x->shape[1]; // 784
+    int classes = dataset_y->shape[1];  // 10
+    
+    for (int i = 0; i < batch_size; i++) {
+        for (int j = 0; j < features; j++) {
+            batch_x->data[i * features + j] = dataset_x->data[(start_idx + i) * features + j];
+        }
+        for (int j = 0; j < classes; j++) {
+            batch_y->data[i * classes + j] = dataset_y->data[(start_idx + i) * classes + j];
+        }
+    }
 }

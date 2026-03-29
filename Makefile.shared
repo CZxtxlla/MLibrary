@@ -1,0 +1,33 @@
+# ==========================================
+# MLibrary Shared Library Build (Python Bridge)
+# ==========================================
+
+CC = gcc
+# -fPIC is mandatory for shared libraries. -O3 ensures max performance.
+CFLAGS = -Wall -Wextra -O3 -fPIC
+# -shared tells the linker to make an .so file, -lm links the math library
+LDFLAGS = -shared -lm
+
+# The core engine files (NO test files here!)
+SRCS = src/tensor.c src/autograd.c src/nn.c src/optim.c src/loss.c src/data.c
+
+# Automatically replace .c with .o for object files
+OBJS = $(SRCS:.c=.o)
+
+# The final output file Python will look for
+LIB_NAME = libmlibrary.so
+
+# Default target
+all: $(LIB_NAME)
+
+# Rule to link the object files into the shared library
+$(LIB_NAME): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Rule to compile .c files into .o files
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean up
+clean:
+	rm -f $(OBJS) $(LIB_NAME)

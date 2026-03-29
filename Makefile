@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -I./include
+CFLAGS = -Wall -Wextra -O3 -I./include
 
 # The core library source files and their corresponding object files
 SRCS = src/tensor.c src/autograd.c src/nn.c src/optim.c src/data.c src/loss.c

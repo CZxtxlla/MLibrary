@@ -8,4 +8,9 @@
 // - targets: A [batch_size, num_classes] tensor of one-hot encoded true labels.
 float cross_entropy_loss(Tensor* logits, Tensor* targets);
 
+// Computes Mean Squared Error Loss across a batch.
+// - predictions: The [batch_size, num_outputs] predicted values.
+// - targets: The [batch_size, num_outputs] true values.
+//float MSE_loss(Tensor* predictions, Tensor* targets);
+
 #endif 

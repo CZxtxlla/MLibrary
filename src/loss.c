@@ -49,3 +49,9 @@ float cross_entropy_loss(Tensor* logits, Tensor* targets){
     return total_loss / (float)batch_size; // Return the average loss per example
 
 }
+/*
+float MSE_loss(Tensor* predictions, Tensor* targets) {
+    // Computes Mean Squared Error Loss across a batch.
+    
+}
+*/

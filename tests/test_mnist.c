@@ -8,6 +8,7 @@
 #include "../include/loss.h"
 #include "../include/data.h"
 
+/*
 // Helper function to copy a chunk of the dataset into our active batch tensors
 void fetch_batch(Tensor* dataset_x, Tensor* dataset_y, int start_idx, int batch_size, Tensor* batch_x, Tensor* batch_y) {
     int features = dataset_x->shape[1]; // 784
@@ -22,6 +23,7 @@ void fetch_batch(Tensor* dataset_x, Tensor* dataset_y, int start_idx, int batch_
         }
     }
 }
+*/
 
 // Evaluates the network's accuracy by checking how many predictions match the targets
 float calculate_accuracy(LinearLayer* layer1, LinearLayer* layer2, Tensor* dataset_x, Tensor* dataset_y, int batch_size) {
