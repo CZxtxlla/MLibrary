@@ -36,7 +36,7 @@ int main() {
     printf("Starting Training...\n\n");
 
     // 4. The Training Loop
-    int epochs = 2000; // XOR takes longer to map non-linear spaces
+    int epochs = 500;
     for (int epoch = 1; epoch <= epochs; epoch++) {
         
         sgd_zero_grad(optim);
@@ -65,7 +65,7 @@ int main() {
         // Memory Cleanup
         free_graph(final_out);
 
-        if (epoch % 200 == 0 || epoch == 1) {
+        if (epoch % 10 == 0 || epoch == 1) {
             printf("Epoch %4d | Loss: %8.4f\n", epoch, mse);
         }
     }
