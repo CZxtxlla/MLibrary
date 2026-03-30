@@ -1,4 +1,5 @@
 #include "../include/tensor.h"
+#include "../include/cuda_backend.h"
 
 
 Tensor* create_tensor(int*shape, int ndims, bool requires_grad) {
@@ -25,8 +26,11 @@ Tensor* create_tensor(int*shape, int ndims, bool requires_grad) {
         t -> shape[i] = shape[i];
         t -> size *= shape[i];
     }
-
+    t->device = DEVICE_CPU; // Everything starts on the CPU by default
+    t->gpu_data = NULL;     // Explicitly set to NULL so we know it's empty
+    t->gpu_grad = NULL;
     t -> data = (float*)calloc(t -> size, sizeof(float)); // Allocate and zero-initialize data array
+
 
     if(requires_grad) {
         t -> grad = (float*)calloc(t -> size, sizeof(float)); // Allocate and zero-intiialize gradient array
@@ -50,7 +54,10 @@ void free_tensor(Tensor* t) {
     if (t->grad != NULL) free(t->grad);
     if (t->shape != NULL) free(t->shape);
     if (t->parents != NULL) free(t->parents); // Free the parents array if it exists, but not the tensors it points to
-
+    
+    if(t->gpu_data != NULL || t->gpu_grad != NULL) {
+        cuda_free_device_memory(t); // For GPU memory, must implement cuda_free in GPU utility file
+    }
     free(t); // Free the tensor struct itself
 }
 
@@ -220,3 +227,20 @@ Tensor* tensor_relu(Tensor* a) {
     }
     return result;
 }
+
+void tensor_to_device(Tensor* t, DeviceType device) {
+    // transfers tensor data and gradients between CPU and GPU memory.
+    if (t->device == device) {
+        return; // Already on the desired device
+    }
+    if (device == DEVICE_CPU) {
+        cuda_copy_to_host(t); // Copies data from GPU to CPU
+        t-> device = DEVICE_CPU;
+    } else if (device == DEVICE_GPU) {
+        cuda_copy_to_device(t); // Copies data from CPU to GPU
+        t-> device = DEVICE_GPU;
+    } else {
+        fprintf(stderr, "Error: Invalid device type specified for tensor transfer.\n");
+    }
+}
+

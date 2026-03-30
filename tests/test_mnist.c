@@ -169,7 +169,7 @@ int main() {
             // Step G: Garbage Collection
             free_graph(logits);
 
-            // --- NEW: Live Progress Printing ---
+            // --- Live Progress Printing ---
             // Print progress every 100 steps, or on the very last step
             if (step % 100 == 0 || step == steps_per_epoch - 1) {
                 // \r moves the cursor back to the start of the line. 

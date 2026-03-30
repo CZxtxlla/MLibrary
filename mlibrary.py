@@ -11,6 +11,9 @@ class CTensor(ctypes.Structure): pass
 CTensor._fields_ = [
     ("data", ctypes.POINTER(ctypes.c_float)),
     ("grad", ctypes.POINTER(ctypes.c_float)),
+    ("gpu_data", ctypes.POINTER(ctypes.c_float)),
+    ("gpu_grad", ctypes.POINTER(ctypes.c_float)),
+    ("device", ctypes.c_int), # C enums evaluate to standard integers
     ("shape", ctypes.POINTER(ctypes.c_int)),
     ("ndims", ctypes.c_int),
     ("size", ctypes.c_int),

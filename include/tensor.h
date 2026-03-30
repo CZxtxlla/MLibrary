@@ -7,6 +7,11 @@
 #include "math.h"
 
 typedef enum {
+    DEVICE_CPU,
+    DEVICE_GPU
+} DeviceType;
+
+typedef enum {
     OP_NONE,
     OP_ADD,
     OP_MUL,
@@ -16,8 +21,15 @@ typedef enum {
 } OpType;
 
 typedef struct Tensor {
+    // CPU memory pointers
     float* data;            // The actual forward pass values
     float* grad;            // The accumulated gradients
+    //GPU memory pointers
+    float* gpu_data;
+    float* gpu_grad;
+
+    DeviceType device;      // Where the tensor is currently located (CPU or GPU)
+
     int* shape;             // e.g., [64, 128] for a 2D matrix
     int ndims;              // Number of dimensions
     int size;               // Total number of elements (product of shape)
@@ -31,6 +43,7 @@ typedef struct Tensor {
 
 Tensor* create_tensor(int* shape, int ndims, bool requires_grad);
 void free_tensor(Tensor* t);
+void tensor_to_device(Tensor* t, DeviceType device);
 
 Tensor* tensor_add(Tensor* a, Tensor* b);
 Tensor* tensor_mul(Tensor* a, Tensor* b);
