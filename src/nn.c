@@ -1,4 +1,5 @@
 #include "../include/nn.h"
+#include <time.h>
 
 float random_float() {
     // Helper function to generate a random float between -1.0 and 1.0 for weight initialization
@@ -28,12 +29,13 @@ LinearLayer* create_linear_layer(int in_features, int out_features) {
         return NULL;
     }
 
-    // Initialize weights randomly and bias to zero
+    // Xavier uniform init reduces dead-ReLU starts in small MLPs.
+    float limit = sqrtf(6.0f / (float)(in_features + out_features));
     for (int i = 0; i < layer->weight->size; i++) {
-        layer->weight->data[i] = random_float(); // Small random values between -1.0 and 1.0
+        layer->weight->data[i] = random_float() * limit;
     }
     for (int i = 0; i < layer->bias->size; i++) {
-        layer->bias->data[i] = 0.0f; // Bias initialized to zero
+        layer->bias->data[i] = 0.01f; // Small positive bias to keep ReLU units active at startup
     }
     return layer;
 }
@@ -61,6 +63,12 @@ void free_linear_layer(LinearLayer* layer) {
 // MLP functions go here
 
 MLP* create_mlp(int* architecture, int num_layers) {
+    static bool seeded = false;
+    if (!seeded) {
+        srand((unsigned int)time(NULL));
+        seeded = true;
+    }
+
     MLP* model = (MLP*)malloc(sizeof(MLP));
     if (model == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for MLP struct.\n");

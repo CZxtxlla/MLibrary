@@ -1,0 +1,42 @@
+# ==========================================
+# MLibrary Shared Library Build (CUDA Ready)
+# ==========================================
+
+CC = gcc
+NVCC = nvcc
+
+# CPU Flags
+CFLAGS = -Wall -Wextra -O3 -fPIC
+# GPU Flags (-Xcompiler -fPIC passes the mandatory flag through nvcc to the host compiler)
+NVCCFLAGS = -O3 -Xcompiler -fPIC
+
+# We add the CUDA runtime library so the linker doesn't panic
+LDFLAGS = -shared -lm -L/usr/local/cuda/lib64 -lcudart
+
+# Separate our C files and CU files
+C_SRCS = src/tensor.c src/autograd.c src/nn.c src/optim.c src/loss.c src/data.c
+CU_SRCS = src/cuda_backend.cu
+
+# Object files
+C_OBJS = $(C_SRCS:.c=.o)
+CU_OBJS = $(CU_SRCS:.cu=.o)
+OBJS = $(C_OBJS) $(CU_OBJS)
+
+LIB_NAME = libmlibrary.so
+
+all: $(LIB_NAME)
+
+# Link everything together
+$(LIB_NAME): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Compile C files
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile CUDA files
+%.o: %.cu
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(LIB_NAME)

@@ -49,6 +49,9 @@ if __name__ == "__main__":
     print("Loading datasets...")
     train_images = load_mnist_images("data/train-images-idx3-ubyte")
     train_labels = load_mnist_labels("data/train-labels-idx1-ubyte")
+
+    test_images = load_mnist_images("data/t10k-images-idx3-ubyte")
+    test_labels = load_mnist_labels("data/t10k-labels-idx1-ubyte")
     
     num_samples = train_images.shape[0]
     print(f"Loaded {num_samples} images.\n")
@@ -98,8 +101,8 @@ if __name__ == "__main__":
 
         time_spent = time.time() - start_time
         print(f"\n  [Summary] Average Loss: {epoch_loss / steps_per_epoch:8.4f} | Time: {time_spent:.2f}s\n")
-        print("Evaluating Model Accuracy on Training Data...")
-        accuracy = calculate_accuracy(model, train_images, train_labels, batch_size)
-        print(f"  Training Accuracy: {accuracy:.2f}%\n")
+        print("Evaluating Model Accuracy on test set...")
+        accuracy = calculate_accuracy(model, test_images, test_labels, batch_size)
+        print(f"  Test Accuracy: {accuracy:.2f}%\n")
 
     print("Training Complete!")

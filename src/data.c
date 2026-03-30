@@ -1,6 +1,10 @@
 #include "../include/data.h"
 #include <stdint.h>
 
+static bool read_exact(FILE* file, void* buffer, size_t size, size_t count) {
+    return fread(buffer, size, count, file) == count;
+}
+
 uint32_t swap_endian(uint32_t val) {
     // Helper function to flip Big-Endian to Little-Endian
     return ((val << 24) & 0xFF000000) |
@@ -22,10 +26,14 @@ Tensor* load_mnist_images(const char* filename) {
     uint32_t magic_number, num_images, num_rows, num_cols;
     
     // Read the 4-integer header
-    fread(&magic_number, sizeof(magic_number), 1, file);
-    fread(&num_images, sizeof(num_images), 1, file);
-    fread(&num_rows, sizeof(num_rows), 1, file);
-    fread(&num_cols, sizeof(num_cols), 1, file);
+    if (!read_exact(file, &magic_number, sizeof(magic_number), 1) ||
+        !read_exact(file, &num_images, sizeof(num_images), 1) ||
+        !read_exact(file, &num_rows, sizeof(num_rows), 1) ||
+        !read_exact(file, &num_cols, sizeof(num_cols), 1)) {
+        fprintf(stderr, "Error: Failed to read MNIST image header from %s\n", filename);
+        fclose(file);
+        return NULL;
+    }
 
     // Flip the bytes to Little-Endian
     magic_number = swap_endian(magic_number);
@@ -42,10 +50,26 @@ Tensor* load_mnist_images(const char* filename) {
     int features = num_rows * num_cols; // 28 * 28 = 784
     int shape[] = {num_images, features};
     Tensor* images = create_tensor(shape, 2, false);
+    if (images == NULL) {
+        fclose(file);
+        return NULL;
+    }
 
     // Read the raw pixel bytes (0-255)
     uint8_t* raw_pixels = (uint8_t*)malloc(num_images * features * sizeof(uint8_t));
-    fread(raw_pixels, sizeof(uint8_t), num_images * features, file);
+    if (raw_pixels == NULL) {
+        fprintf(stderr, "Error: Failed to allocate MNIST image buffer.\n");
+        free_tensor(images);
+        fclose(file);
+        return NULL;
+    }
+    if (!read_exact(file, raw_pixels, sizeof(uint8_t), num_images * features)) {
+        fprintf(stderr, "Error: Failed to read MNIST image payload from %s\n", filename);
+        free(raw_pixels);
+        free_tensor(images);
+        fclose(file);
+        return NULL;
+    }
 
     // Convert to floats and normalize to 0.0 - 1.0
     for (int i = 0; i < images->size; i++) {
@@ -70,8 +94,12 @@ Tensor* load_mnist_labels(const char* filename) {
     uint32_t magic_number, num_items;
     
     // Read the 2-integer header
-    fread(&magic_number, sizeof(magic_number), 1, file);
-    fread(&num_items, sizeof(num_items), 1, file);
+    if (!read_exact(file, &magic_number, sizeof(magic_number), 1) ||
+        !read_exact(file, &num_items, sizeof(num_items), 1)) {
+        fprintf(stderr, "Error: Failed to read MNIST label header from %s\n", filename);
+        fclose(file);
+        return NULL;
+    }
 
     magic_number = swap_endian(magic_number);
     num_items = swap_endian(num_items);
@@ -85,6 +113,10 @@ Tensor* load_mnist_labels(const char* filename) {
     // We create a one-hot encoded matrix: [num_items, 10]
     int shape[] = {num_items, 10};
     Tensor* labels = create_tensor(shape, 2, false);
+    if (labels == NULL) {
+        fclose(file);
+        return NULL;
+    }
 
     // Initialize all to 0.0f
     for (int i = 0; i < labels->size; i++) {
@@ -93,7 +125,19 @@ Tensor* load_mnist_labels(const char* filename) {
 
     // Read the raw labels (0-9)
     uint8_t* raw_labels = (uint8_t*)malloc(num_items * sizeof(uint8_t));
-    fread(raw_labels, sizeof(uint8_t), num_items, file);
+    if (raw_labels == NULL) {
+        fprintf(stderr, "Error: Failed to allocate MNIST label buffer.\n");
+        free_tensor(labels);
+        fclose(file);
+        return NULL;
+    }
+    if (!read_exact(file, raw_labels, sizeof(uint8_t), num_items)) {
+        fprintf(stderr, "Error: Failed to read MNIST label payload from %s\n", filename);
+        free(raw_labels);
+        free_tensor(labels);
+        fclose(file);
+        return NULL;
+    }
 
     // Set the specific index to 1.0f for the one-hot encoding
     for (uint32_t i = 0; i < num_items; i++) {
